@@ -1,5 +1,7 @@
 <html>
 <script type="module">
+    import { connect } from './websocket.js';
+
     let audioTracks = [];
     let videoTracks = [];
     let myStream;
@@ -45,7 +47,7 @@
         audioTracks.forEach(track => connection.addTrack(track, myStream));
         videoTracks.forEach(track => connection.addTrack(track, myStream));
 
-    
+
         // console.log('Connection created:', connection);
         connection.onicecandidate = event => {
             console.log('New ICE candidate:', event.candidate);
@@ -66,6 +68,14 @@
     }
 
     const main = async () => {
+
+
+        document.getElementById('join-btn').addEventListener('click', () => {
+            const room = document.getElementById('room-input').value.trim();
+            if (!room) return;
+            connect(room, (message) => console.log('Signaling message:', message));
+        });
+
         await getTracks();
         createConnection();
     }
@@ -79,6 +89,11 @@
 
 <body>
     <h1>Streams</h1>
+
+    <div>
+        <input id="room-input" type="text" placeholder="Room ID" />
+        <button id="join-btn">Join Room</button>
+    </div>
 
     <div>
         <h2>Local Stream</h2>

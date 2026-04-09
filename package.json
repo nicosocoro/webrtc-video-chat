@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "server": "node server/index.js",
+    "client": "serve ./client"
   },
   "keywords": [],
   "author": "Nicolas Socoro",
@@ -14,6 +15,7 @@
     "ws": "^8.20.0"
   },
   "devDependencies": {
-    "@types/ws": "^8.18.1"
+    "@types/ws": "^8.18.1",
+    "serve": "^14.2.6"
   }
 }

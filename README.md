@@ -8,7 +8,12 @@ This is a simple video chat to learn WebRTC.
 
 Vanilla Javascript web site used by peers (caller and callee) to communicate with its respective peer.
 
-Open `index.html` in your browser to use it.
+```sh
+npm install
+npm run client
+```
+
+It will open a local server on a random port.
 
 ## Server
 
@@ -16,9 +21,9 @@ Node server which supports WebSocket for two-way real-time communication.
 
 The `signaling server` that forwards networking information between peers to help them stablish the WebRTC connection.
 
-```
-npm install
-npm run start
+```sh
+npm install # If not done yet
+npm run server
 ```
 
 ## WebRTC concepts
