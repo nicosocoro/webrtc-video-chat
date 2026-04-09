@@ -12,6 +12,7 @@ wss.on('connection', (ws) => {
         let message;
         try {
             message = JSON.parse(data);
+            console.log('Received:', message);
         } catch {
             console.error('Invalid JSON received');
             return;
@@ -20,6 +21,7 @@ wss.on('connection', (ws) => {
         const { type, room, payload } = message;
 
         if (type === 'join') {
+            console.log(`Client requested to join room: ${room}`);
             currentRoom = room;
             if (!rooms.has(room)) rooms.set(room, new Set());
             rooms.get(room).add(ws);
@@ -32,6 +34,7 @@ wss.on('connection', (ws) => {
 
         // Relay offer, answer, ice-candidate to all other peers in the room
         if (['offer', 'answer', 'ice-candidate'].includes(type)) {
+            console.log(`Relaying ${type} to room: ${currentRoom}`);
             broadcast(currentRoom, ws, { type, payload });
         }
     });

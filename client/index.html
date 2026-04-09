@@ -1,6 +1,6 @@
 <html>
 <script type="module">
-    import { connect } from './websocket.js';
+    import { connect, send } from './websocket.js';
 
     let audioTracks = [];
     let videoTracks = [];
@@ -48,12 +48,9 @@
         videoTracks.forEach(track => connection.addTrack(track, myStream));
 
 
-        // console.log('Connection created:', connection);
         connection.onicecandidate = event => {
             console.log('New ICE candidate:', event.candidate);
-            // if (event.candidate) {
-            //     console.log('New ICE candidate:', event.candidate);
-            // }
+            send({ type: 'ice-candidate', candidate: event.candidate });
         };
 
         // connection.ontrack = ({ track, streams }) => {

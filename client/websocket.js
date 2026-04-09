@@ -21,6 +21,7 @@ export const connect = (room, onMessage) => {
 };
 
 export const send = (type, payload) => {
+    console.log('Sending:', { type, payload });
     if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type, payload }));
     }
