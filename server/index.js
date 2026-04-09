@@ -6,7 +6,11 @@ const wss = new WebSocketServer({ port: PORT });
 const rooms = new Map();
 
 wss.on('connection', (ws) => {
+    const clientId = crypto.randomUUID();
     let currentRoom = null;
+
+    ws.send(JSON.stringify({ type: 'connected', clientId }));
+    console.log(`Client connected: ${clientId}`);
 
     ws.on('message', (data) => {
         let message;

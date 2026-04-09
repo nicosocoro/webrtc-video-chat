@@ -1,6 +1,7 @@
 const SIGNALING_SERVER = 'ws://localhost:3000';
 
 let socket;
+export let clientId = null;
 
 export const connect = (room, onMessage) => {
     socket = new WebSocket(SIGNALING_SERVER);
@@ -12,6 +13,11 @@ export const connect = (room, onMessage) => {
 
     socket.onmessage = (event) => {
         const message = JSON.parse(event.data);
+        if (message.type === 'connected') {
+            clientId = message.clientId;
+            console.log('Assigned client ID:', clientId);
+            return;
+        }
         console.log('Received:', message);
         onMessage(message);
     };
