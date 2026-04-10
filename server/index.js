@@ -10,14 +10,21 @@ const WS_PORT = 3001;
 const rooms = new Set();
 const router = createRouter();
 
-router.post('/rooms', (_req, res) => {
+router.post('/users/anonymous-session', (_req, res) => {
     const userId = crypto.randomUUID();
+    console.log(`Anonymous session created: ${userId}`);
+    res.writeHead(201, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ userId }));
+});
+
+router.post('/users/(?<userId>[^/]+)/rooms/create', (req, res) => {
+    const { userId } = req.params;
     const room = new Room(crypto.randomUUID());
     room.add(new UserRoom(userId, Role.ADMIN));
     rooms.add(room);
     console.log(`Room created: ${room.id} by user: ${userId}`);
     res.writeHead(201, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ roomId: room.id, userId }));
+    res.end(JSON.stringify({ roomId: room.id }));
 });
 
 const httpServer = http.createServer((req, res) => router.dispatch(req, res));

@@ -6,6 +6,7 @@
     let videoTracks = [];
     let myStream;
     let connection;
+    let anonymousUserId;
 
     const getTracks = async () => {
         try {
@@ -67,13 +68,18 @@
     const main = async () => {
 
 
-        document.getElementById('create-room-btn').addEventListener('click', async () => {
-        const res = await fetch('http://localhost:3000/rooms', { method: 'POST' });
-        const { roomId, userId } = await res.json();
-        console.log('Room created:', roomId, '| User ID:', userId);
-    });
+        const sessionRes = await fetch('http://localhost:3000/users/anonymous-session', { method: 'POST' });
+        const { userId } = await sessionRes.json();
+        anonymousUserId = userId;
+        console.log('Session created | User ID:', userId);
 
-    document.getElementById('join-btn').addEventListener('click', () => {
+        document.getElementById('create-room-btn').addEventListener('click', async () => {
+            const res = await fetch(`http://localhost:3000/users/${anonymousUserId}/rooms/create`, { method: 'POST' });
+            const { roomId } = await res.json();
+            console.log('Room created:', roomId);
+        });
+
+        document.getElementById('join-btn').addEventListener('click', () => {
             const room = document.getElementById('room-input').value.trim();
             if (!room) return;
             connect(room, (message) => console.log('Signaling message:', message));
@@ -95,7 +101,7 @@
 
     <div>
         <button id="create-room-btn">Create Room</button>
-        
+
         <br />
         <input id="room-input" type="text" placeholder="Room ID" />
         <button id="join-btn">Join Room</button>
