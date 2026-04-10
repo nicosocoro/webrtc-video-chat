@@ -1,6 +1,6 @@
 <html>
 <script type="module">
-    import { connect, send } from './websocket.js';
+    import { connect, join, send } from './websocket.js';
 
     let audioTracks = [];
     let videoTracks = [];
@@ -67,7 +67,6 @@
 
     const main = async () => {
 
-
         const sessionRes = await fetch('http://localhost:3000/users/anonymous-session', { method: 'POST' });
         const { userId } = await sessionRes.json();
         anonymousUserId = userId;
@@ -77,12 +76,15 @@
             const res = await fetch(`http://localhost:3000/users/${anonymousUserId}/rooms/create`, { method: 'POST' });
             const { roomId } = await res.json();
             console.log('Room created:', roomId);
+            await connect((message) => console.log('Signaling message:', message));
+            // Admin is already in the room via HTTP — no join needed
         });
 
-        document.getElementById('join-btn').addEventListener('click', () => {
+        document.getElementById('join-btn').addEventListener('click', async () => {
             const room = document.getElementById('room-input').value.trim();
             if (!room) return;
-            connect(room, (message) => console.log('Signaling message:', message));
+            await connect((message) => console.log('Signaling message:', message));
+            join(room, anonymousUserId);
         });
 
         await getTracks();

@@ -3,12 +3,12 @@ const SIGNALING_SERVER = 'ws://localhost:3001';
 let socket;
 export let clientId = null;
 
-export const connect = (room, onMessage) => {
+export const connect = (onMessage) => new Promise((resolve) => {
     socket = new WebSocket(SIGNALING_SERVER);
 
     socket.onopen = () => {
         console.log('Connected to signaling server');
-        socket.send(JSON.stringify({ type: 'join', room }));
+        resolve();
     };
 
     socket.onmessage = (event) => {
@@ -24,6 +24,10 @@ export const connect = (room, onMessage) => {
 
     socket.onclose = () => console.log('Disconnected from signaling server');
     socket.onerror = (err) => console.error('WebSocket error:', err);
+});
+
+export const join = (room, userId) => {
+    socket.send(JSON.stringify({ type: 'join', room, userId }));
 };
 
 export const send = (type, payload) => {

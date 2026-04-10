@@ -52,7 +52,7 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        const { type, room, payload } = message;
+        const { type, room, userId, payload } = message;
 
         if (type === 'join') {
             const found = [...rooms].find((r) => r.id === room);
@@ -60,15 +60,19 @@ wss.on('connection', (ws) => {
                 ws.send(JSON.stringify({ type: 'error', message: `Room ${room} does not exist` }));
                 return;
             }
-            currentRoom = found;
-            const existing = found.get(clientId);
-            if (existing) {
-                existing.ws = ws;
-            } else {
-                found.add(new UserRoom(clientId, Role.GUEST, ws));
+            const existing = found.get(userId);
+            if (existing?.ws) {
+                ws.send(JSON.stringify({ type: 'ROOM_REQUEST_REJECTED', message: `User ${userId} is already in room ${room}` }));
+                return;
             }
-            console.log(`Client ${clientId} joined room: ${found.id} (${found.size} members)`);
-            broadcast(found, ws, { type: 'peer-joined', clientId });
+            currentRoom = found;
+            if (existing) {
+                existing.ws = ws; // admin reconnecting
+            } else {
+                found.add(new UserRoom(userId, Role.GUEST, ws));
+            }
+            console.log(`Client ${userId} joined room: ${found.id} (${found.size} members)`);
+            broadcast(found, ws, { type: 'peer-joined', clientId: userId });
             return;
         }
 
