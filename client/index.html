@@ -83,12 +83,12 @@
         });
 
         document.getElementById('join-btn').addEventListener('click', async () => {
-            const room = document.getElementById('room-input').value.trim();
-            if (!room) return;
+            const roomId = document.getElementById('room-input').value.trim();
+            if (!roomId) return;
             console.log('Connecting to signaling server');
             await connectToSignaling();
-            console.log('Joining room:', room);
-            join(room, anonymousUserId);
+            console.log('Joining room:', roomId);
+            join(roomId, anonymousUserId);
         });
 
         // await getTracks();

@@ -24,8 +24,8 @@ export const identify = (userId, roomId = null) => {
     socket.send(JSON.stringify({ type: 'identify', userId, roomId }));
 };
 
-export const join = (room, userId) => {
-    socket.send(JSON.stringify({ type: 'join', room, userId }));
+export const join = (roomId, userId) => {
+    socket.send(JSON.stringify({ type: 'join', roomId: roomId, userId: userId }));
 };
 
 export const send = (type, data = {}) => {

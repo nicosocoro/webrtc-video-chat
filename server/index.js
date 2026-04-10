@@ -36,8 +36,6 @@ httpServer.listen(HTTP_PORT, () => {
 const wss = new WebSocketServer({ port: WS_PORT });
 
 wss.on('connection', (ws) => {
-    let currentRoom = null;
-
     console.log('Client connected');
 
     ws.on('message', (data) => {
@@ -50,47 +48,50 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        const { type, room, userId, roomId, payload } = message;
+        const { type, userId, roomId, payload } = message;
 
         if (type === 'identify') {
-            const found = [...rooms].find((r) => r.id === roomId);
-            const member = found?.get(userId);
-            if (!found || !member) {
+            const room = [...rooms].find((r) => r.id === roomId);
+            const member = room?.get(userId);
+            if (!room || !member) {
                 ws.send(JSON.stringify({ type: 'error', message: `Room ${roomId} does not exist or user is not a member` }));
                 return;
             }
             member.ws = ws;
-            currentRoom = found;
+            
             return;
         }
 
         if (type === 'join') {
-            const found = [...rooms].find((r) => r.id === room);
-            if (!found) {
-                ws.send(JSON.stringify({ type: 'error', message: `Room ${room} does not exist` }));
+            const room = [...rooms].find((r) => r.id === roomId);
+            if (!room) {
+                ws.send(JSON.stringify({ type: 'error', message: `Room ${roomId} does not exist` }));
                 return;
             }
-            const existing = found.get(userId);
+            const existing = room.get(userId);
             if (existing?.ws) {
-                ws.send(JSON.stringify({ type: 'ROOM_REQUEST_REJECTED', message: `User ${userId} is already in room ${room}` }));
+                ws.send(JSON.stringify({ type: 'ROOM_REQUEST_REJECTED', message: `User ${userId} is already in room ${room.id}` }));
                 return;
             }
-            currentRoom = found;
+            
             if (existing) {
                 existing.ws = ws; // admin reconnecting
             } else {
-                found.add(new UserRoom(userId, Role.GUEST, ws));
+                room.add(new UserRoom(userId, Role.GUEST, ws));
             }
-            console.log(`Client ${userId} joined room: ${found.id} (${found.size} members)`);
+            console.log(`Client ${userId} joined room: ${room.id} (${room.size} members)`);
             console.log('Broadcasting new guest to room members');
-            broadcast(found, ws, { type: 'ROOM_GUEST_JOINED' });
+            broadcast(room, ws, { type: 'ROOM_GUEST_JOINED' });
+
+            requestIceCandidatesIfApplies(room);
+
             return;
         }
 
         // Relay offer, answer, ice-candidate to all other peers in the room
         if (['offer', 'answer', 'ice-candidate'].includes(type)) {
-            console.log(`Relaying ${type} to room: ${currentRoom?.id}`);
-            broadcast(currentRoom, ws, { type, payload });
+            // console.log(`Relaying ${type} to room: ${currentRoom?.id}`);
+            // broadcast(currentRoom, ws, { type, payload });
         }
     });
 
@@ -106,6 +107,19 @@ wss.on('connection', (ws) => {
         }
     });
 });
+
+function requestIceCandidatesIfApplies(room) {
+    if (!room) return;
+    if (room.size < 2) return; // No need to exchange candidates if only one peer
+    if (![...room.members.values()].every((member) => member.ws && member.ws.readyState === member.ws.OPEN)) return;
+
+    console.log(`Requesting ICE candidates from all peers in room: ${room.id}`);
+    room.members.forEach((member) => {
+        if (member.ws && member.ws.readyState === member.ws.OPEN) {
+            member.ws.send(JSON.stringify({ type: 'PRE_STREAM_REQUEST_ICE_CANDIDATES' }));
+        }
+    });
+}
 
 function broadcast(room, sender, message) {
     if (!room) return;
