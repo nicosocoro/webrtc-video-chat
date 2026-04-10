@@ -67,7 +67,15 @@
     const main = async () => {
 
 
-        document.getElementById('join-btn').addEventListener('click', () => {
+        const USER_ID = 'user-123';
+
+    document.getElementById('create-room-btn').addEventListener('click', async () => {
+        const res = await fetch(`http://localhost:3000/users/${USER_ID}/rooms`, { method: 'POST' });
+        const { roomId } = await res.json();
+        console.log('Room created:', roomId);
+    });
+
+    document.getElementById('join-btn').addEventListener('click', () => {
             const room = document.getElementById('room-input').value.trim();
             if (!room) return;
             connect(room, (message) => console.log('Signaling message:', message));
@@ -88,6 +96,9 @@
     <h1>Streams</h1>
 
     <div>
+        <button id="create-room-btn">Create Room</button>
+        
+        <br />
         <input id="room-input" type="text" placeholder="Room ID" />
         <button id="join-btn">Join Room</button>
     </div>

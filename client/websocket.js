@@ -1,4 +1,4 @@
-const SIGNALING_SERVER = 'ws://localhost:3000';
+const SIGNALING_SERVER = 'ws://localhost:3001';
 
 let socket;
 export let clientId = null;
@@ -29,6 +29,6 @@ export const connect = (room, onMessage) => {
 export const send = (type, payload) => {
     console.log('Sending:', { type, payload });
     if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type, payload }));
+        socket.send(JSON.stringify({ type, payload, clientId }));
     }
 };
