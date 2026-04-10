@@ -1,6 +1,6 @@
 <html>
 <script type="module">
-    import { connect, join, send } from './websocket.js';
+    import { connect, identify, join, send } from './websocket.js';
 
     let audioTracks = [];
     let videoTracks = [];
@@ -65,6 +65,8 @@
         // };
     }
 
+    const connectToSignaling = () => connect((message) => console.log('Signaling message:', message));
+
     const main = async () => {
 
         const sessionRes = await fetch('http://localhost:3000/users/anonymous-session', { method: 'POST' });
@@ -76,19 +78,21 @@
             const res = await fetch(`http://localhost:3000/users/${anonymousUserId}/rooms/create`, { method: 'POST' });
             const { roomId } = await res.json();
             console.log('Room created:', roomId);
-            await connect((message) => console.log('Signaling message:', message));
-            // Admin is already in the room via HTTP — no join needed
+            await connectToSignaling();
+            identify(anonymousUserId, roomId);
         });
 
         document.getElementById('join-btn').addEventListener('click', async () => {
             const room = document.getElementById('room-input').value.trim();
             if (!room) return;
-            await connect((message) => console.log('Signaling message:', message));
+            console.log('Connecting to signaling server');
+            await connectToSignaling();
+            console.log('Joining room:', room);
             join(room, anonymousUserId);
         });
 
-        await getTracks();
-        createConnection();
+        // await getTracks();
+        // createConnection();
     }
 
     main();

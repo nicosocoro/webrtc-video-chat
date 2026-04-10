@@ -36,11 +36,9 @@ httpServer.listen(HTTP_PORT, () => {
 const wss = new WebSocketServer({ port: WS_PORT });
 
 wss.on('connection', (ws) => {
-    const clientId = crypto.randomUUID();
     let currentRoom = null;
 
-    ws.send(JSON.stringify({ type: 'connected', clientId }));
-    console.log(`Client connected: ${clientId}`);
+    console.log('Client connected');
 
     ws.on('message', (data) => {
         let message;
@@ -52,7 +50,19 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        const { type, room, userId, payload } = message;
+        const { type, room, userId, roomId, payload } = message;
+
+        if (type === 'identify') {
+            const found = [...rooms].find((r) => r.id === roomId);
+            const member = found?.get(userId);
+            if (!found || !member) {
+                ws.send(JSON.stringify({ type: 'error', message: `Room ${roomId} does not exist or user is not a member` }));
+                return;
+            }
+            member.ws = ws;
+            currentRoom = found;
+            return;
+        }
 
         if (type === 'join') {
             const found = [...rooms].find((r) => r.id === room);
@@ -72,7 +82,8 @@ wss.on('connection', (ws) => {
                 found.add(new UserRoom(userId, Role.GUEST, ws));
             }
             console.log(`Client ${userId} joined room: ${found.id} (${found.size} members)`);
-            broadcast(found, ws, { type: 'peer-joined', clientId: userId });
+            console.log('Broadcasting new guest to room members');
+            broadcast(found, ws, { type: 'ROOM_GUEST_JOINED' });
             return;
         }
 

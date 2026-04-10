@@ -1,7 +1,6 @@
 const SIGNALING_SERVER = 'ws://localhost:3001';
 
 let socket;
-export let clientId = null;
 
 export const connect = (onMessage) => new Promise((resolve) => {
     socket = new WebSocket(SIGNALING_SERVER);
@@ -13,11 +12,6 @@ export const connect = (onMessage) => new Promise((resolve) => {
 
     socket.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        if (message.type === 'connected') {
-            clientId = message.clientId;
-            console.log('Assigned client ID:', clientId);
-            return;
-        }
         console.log('Received:', message);
         onMessage(message);
     };
@@ -26,13 +20,18 @@ export const connect = (onMessage) => new Promise((resolve) => {
     socket.onerror = (err) => console.error('WebSocket error:', err);
 });
 
+export const identify = (userId, roomId = null) => {
+    socket.send(JSON.stringify({ type: 'identify', userId, roomId }));
+};
+
 export const join = (room, userId) => {
     socket.send(JSON.stringify({ type: 'join', room, userId }));
 };
 
-export const send = (type, payload) => {
-    console.log('Sending:', { type, payload });
+export const send = (type, data = {}) => {
+    const message = { type, ...data };
+    console.log('Sending:', message);
     if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type, payload, clientId }));
+        socket.send(JSON.stringify(message));
     }
 };
