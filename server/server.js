@@ -3,6 +3,7 @@ import { WebSocketServer } from 'ws';
 import { createRouter } from './router.js';
 import { UserRoom, Role } from './UserRoom.js';
 import { Room } from './Room.js';
+import * as WS from './ws-messages.js';
 
 const HTTP_PORT = 3000;
 const WS_PORT = 3001;
@@ -58,7 +59,7 @@ wss.on('connection', (ws) => {
                 return;
             }
             member.ws = ws;
-            
+
             return;
         }
 
@@ -73,7 +74,7 @@ wss.on('connection', (ws) => {
                 ws.send(JSON.stringify({ type: 'ROOM_REQUEST_REJECTED', message: `User ${userId} is already in room ${room.id}` }));
                 return;
             }
-            
+
             if (existing) {
                 existing.ws = ws; // admin reconnecting
             } else {
@@ -81,18 +82,18 @@ wss.on('connection', (ws) => {
             }
             console.log(`Client ${userId} joined room: ${room.id} (${room.size} members)`);
             console.log('Broadcasting new guest to room members');
-            broadcast(room, ws, { type: 'ROOM_GUEST_JOINED' });
+            broadcast(room, ws, { type: WS.ROOM_GUEST_JOINED });
 
-            requestIceCandidatesIfApplies(room);
+            notifyPeersReadyToConnectIfApplies(room);
 
             return;
         }
 
         // Relay offer, answer, ice-candidate to all other peers in the room
-        if (['offer', 'answer', 'ice-candidate'].includes(type)) {
-            // console.log(`Relaying ${type} to room: ${currentRoom?.id}`);
-            // broadcast(currentRoom, ws, { type, payload });
-        }
+        // if (['offer', 'answer', 'ice-candidate'].includes(type)) {
+        //     // console.log(`Relaying ${type} to room: ${currentRoom?.id}`);
+        //     // broadcast(currentRoom, ws, { type, payload });
+        // }
     });
 
     ws.on('close', () => {
@@ -108,7 +109,7 @@ wss.on('connection', (ws) => {
     });
 });
 
-function requestIceCandidatesIfApplies(room) {
+function notifyPeersReadyToConnectIfApplies(room) {
     if (!room) return;
     if (room.size < 2) return; // No need to exchange candidates if only one peer
     if (![...room.members.values()].every((member) => member.ws && member.ws.readyState === member.ws.OPEN)) return;
@@ -116,7 +117,7 @@ function requestIceCandidatesIfApplies(room) {
     console.log(`Requesting ICE candidates from all peers in room: ${room.id}`);
     room.members.forEach((member) => {
         if (member.ws && member.ws.readyState === member.ws.OPEN) {
-            member.ws.send(JSON.stringify({ type: 'PRE_STREAM_REQUEST_ICE_CANDIDATES' }));
+            member.ws.send(JSON.stringify({ type: WS.PEERS_READY_TO_START_CONNECTION }));
         }
     });
 }

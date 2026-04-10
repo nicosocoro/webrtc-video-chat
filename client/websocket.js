@@ -28,6 +28,10 @@ export const join = (roomId, userId) => {
     socket.send(JSON.stringify({ type: 'join', roomId: roomId, userId: userId }));
 };
 
+export const sendIceCandidates = (roomId, userId) => {
+    socket.send(JSON.stringify({ type: 'ice-candidate', roomId: roomId, userId: userId }));
+};
+
 export const send = (type, data = {}) => {
     const message = { type, ...data };
     console.log('Sending:', message);

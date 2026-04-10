@@ -1,6 +1,7 @@
 <html>
 <script type="module">
     import { connect, identify, join, send } from './websocket.js';
+    import * as WS from './ws-messages.js';
 
     let audioTracks = [];
     let videoTracks = [];
@@ -8,7 +9,7 @@
     let connection;
     let anonymousUserId;
 
-    const getTracks = async () => {
+    const initializeTracks = async () => {
         try {
             myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             audioTracks = myStream.getAudioTracks();
@@ -20,7 +21,8 @@
         }
     }
 
-    const createConnection = () => {
+    const createWebRTCConnection = () => {
+        console.log('Creating RTCPeerConnection');
         const connectionConfiguration = {
             iceServers: [
                 {
@@ -31,31 +33,33 @@
                 }
             ]
         };
+        
         connection = new RTCPeerConnection(connectionConfiguration);
 
         audioTracks.forEach(track => connection.addTrack(track, myStream));
         videoTracks.forEach(track => connection.addTrack(track, myStream));
 
-
         connection.onicecandidate = event => {
             console.log('New ICE candidate:', event.candidate);
-            send({ type: 'ice-candidate', candidate: event.candidate });
+            send({ type: WS.ICE_CANDIDATE, userId: anonymousUserId, candidates: event.candidate });
         };
-
-        // connection.ontrack = ({ track, streams }) => {
-        //     track.onunmute = () => {
-        //         const remoteVideo = document.getElementById('remote-video');
-        //         if (remoteVideo.srcObject) {
-        //             return;
-        //         }
-        //         remoteVideo.srcObject = streams[0];
-        //     };
-        // };
     }
 
-    const connectToSignaling = () => connect((message) => console.log('Signaling message:', message));
+    const connectToSignalingServer = () => connect((message) => handleMessage(message));
+
+    const handleMessage = (message) => {
+        console.log('Received message:', message);
+        switch (message.type) {
+            case WS.PEERS_READY_TO_START_CONNECTION:
+                createWebRTCConnection();
+                break;
+            default:
+                console.warn('Unknown message type:', message.type);
+        }
+    }
 
     const main = async () => {
+        await initializeTracks();
 
         const sessionRes = await fetch('http://localhost:3000/users/anonymous-session', { method: 'POST' });
         const { userId } = await sessionRes.json();
@@ -66,7 +70,7 @@
             const res = await fetch(`http://localhost:3000/users/${anonymousUserId}/rooms/create`, { method: 'POST' });
             const { roomId } = await res.json();
             console.log('Room created:', roomId);
-            await connectToSignaling();
+            await connectToSignalingServer();
             identify(anonymousUserId, roomId);
         });
 
@@ -74,13 +78,10 @@
             const roomId = document.getElementById('room-input').value.trim();
             if (!roomId) return;
             console.log('Connecting to signaling server');
-            await connectToSignaling();
+            await connectToSignalingServer();
             console.log('Joining room:', roomId);
             join(roomId, anonymousUserId);
         });
-
-        // await getTracks();
-        // createConnection();
     }
 
     main();
