@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "server": "node server/index.js",
+    "server": "node server/server.js",
     "client": "serve ./client -l 8080"
   },
   "keywords": [],
