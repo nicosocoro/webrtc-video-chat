@@ -67,12 +67,10 @@
     const main = async () => {
 
 
-        const USER_ID = 'user-123';
-
-    document.getElementById('create-room-btn').addEventListener('click', async () => {
-        const res = await fetch(`http://localhost:3000/users/${USER_ID}/rooms`, { method: 'POST' });
-        const { roomId } = await res.json();
-        console.log('Room created:', roomId);
+        document.getElementById('create-room-btn').addEventListener('click', async () => {
+        const res = await fetch('http://localhost:3000/rooms', { method: 'POST' });
+        const { roomId, userId } = await res.json();
+        console.log('Room created:', roomId, '| User ID:', userId);
     });
 
     document.getElementById('join-btn').addEventListener('click', () => {

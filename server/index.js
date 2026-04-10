@@ -10,14 +10,14 @@ const WS_PORT = 3001;
 const rooms = new Set();
 const router = createRouter();
 
-router.post('/users/(?<userId>[^/]+)/rooms', (req, res) => {
-    const { userId } = req.params;
+router.post('/rooms', (_req, res) => {
+    const userId = crypto.randomUUID();
     const room = new Room(crypto.randomUUID());
     room.add(new UserRoom(userId, Role.ADMIN));
     rooms.add(room);
     console.log(`Room created: ${room.id} by user: ${userId}`);
     res.writeHead(201, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ roomId: room.id }));
+    res.end(JSON.stringify({ roomId: room.id, userId }));
 });
 
 const httpServer = http.createServer((req, res) => router.dispatch(req, res));
