@@ -1,8 +1,8 @@
 import http from 'http';
 import { WebSocketServer } from 'ws';
-import { createRouter } from './router.js';
-import { UserRoom, Role } from './UserRoom.js';
 import { Room } from './Room.js';
+import { createRouter } from './router.js';
+import { Role, UserRoom } from './UserRoom.js';
 import * as WS from './ws-messages.js';
 
 const HTTP_PORT = 3000;
@@ -43,17 +43,19 @@ wss.on('connection', (ws) => {
         let message;
         try {
             message = JSON.parse(data);
-            console.log('Received:', message);
+            if (message.type !== WS.ICE_CANDIDATE && message.type !== WS.OFFER_CREATED) {
+                console.log('Received:', message);
+            }
         } catch {
             console.error('Invalid JSON received');
             return;
         }
 
-        const { type, userId, roomId, payload } = message;
+        const { type, userId, roomId } = message;
+        const room = [...rooms].find((r) => r.id === roomId);
+        const member = room?.get(userId);
 
-        if (type === 'identify') {
-            const room = [...rooms].find((r) => r.id === roomId);
-            const member = room?.get(userId);
+        if (type === WS.USER_IDENTIFY) {
             if (!room || !member) {
                 ws.send(JSON.stringify({ type: 'error', message: `Room ${roomId} does not exist or user is not a member` }));
                 return;
@@ -63,24 +65,24 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        if (type === 'join') {
-            const room = [...rooms].find((r) => r.id === roomId);
+        if (type === WS.JOIN_ROOM) {
             if (!room) {
                 ws.send(JSON.stringify({ type: 'error', message: `Room ${roomId} does not exist` }));
                 return;
             }
             const existing = room.get(userId);
-            if (existing?.ws) {
-                ws.send(JSON.stringify({ type: 'ROOM_REQUEST_REJECTED', message: `User ${userId} is already in room ${room.id}` }));
+
+            if (existing) {
+                console.log(`User ${userId} already joined to room ${room.id}`);
+                if (existing?.ws) {
+                    ws.send(JSON.stringify({ type: 'ROOM_REQUEST_REJECTED', message: `User ${userId} is already in room ${room.id}` }));
+                }
                 return;
             }
 
-            if (existing) {
-                existing.ws = ws; // admin reconnecting
-            } else {
-                room.add(new UserRoom(userId, Role.GUEST, ws));
-            }
-            console.log(`Client ${userId} joined room: ${room.id} (${room.size} members)`);
+            room.add(new UserRoom(userId, Role.GUEST, ws));
+
+            console.log(`Client ${userId} joined room: ${room.id} (${room.size} [${[...room.members.keys()].join(', ')}] members)`);
             console.log('Broadcasting new guest to room members');
             broadcast(room, ws, { type: WS.ROOM_GUEST_JOINED });
 
@@ -89,11 +91,14 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        // Relay offer, answer, ice-candidate to all other peers in the room
-        // if (['offer', 'answer', 'ice-candidate'].includes(type)) {
-        //     // console.log(`Relaying ${type} to room: ${currentRoom?.id}`);
-        //     // broadcast(currentRoom, ws, { type, payload });
-        // }
+        if (type === WS.OFFER_CREATED) {
+            console.log(`Offer received from user ${userId} in room ${roomId}`);
+            const peer = room?.peerOf(userId);
+            console.log(`Sending offer to peer ${peer?.id} in room ${roomId}`);
+            const offer = message.offer;
+            peer?.ws?.send(JSON.stringify({ type: WS.OFFER_CREATED, offer }));
+            return;
+        }
     });
 
     ws.on('close', () => {
@@ -117,7 +122,8 @@ function notifyPeersReadyToConnectIfApplies(room) {
     console.log(`Requesting ICE candidates from all peers in room: ${room.id}`);
     room.members.forEach((member) => {
         if (member.ws && member.ws.readyState === member.ws.OPEN) {
-            member.ws.send(JSON.stringify({ type: WS.PEERS_READY_TO_START_CONNECTION }));
+            const shouldCreateOffer = member.role === Role.ADMIN;
+            member.ws.send(JSON.stringify({ type: WS.PEERS_READY_TO_START_CONNECTION, shouldCreateOffer: shouldCreateOffer }));
         }
     });
 }
