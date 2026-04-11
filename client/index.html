@@ -3,20 +3,20 @@
     import { connect, identify, join, send } from './websocket.js';
     import * as WS from './ws-messages.js';
 
-    let audioTracks = [];
-    let videoTracks = [];
-    let myStream;
-    let connection;
-    let anonymousUserId;
-    let gRoomId;
+    let _audioTracks = [];
+    let _videoTracks = [];
+    let _stream;
+    let _connection;
+    let _anonymousUserId;
+    let _roomId;
 
     const initializeTracks = async () => {
         try {
-            myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            audioTracks = myStream.getAudioTracks();
-            videoTracks = myStream.getVideoTracks();
+            _stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            _audioTracks = _stream.getAudioTracks();
+            _videoTracks = _stream.getVideoTracks();
 
-            document.getElementById('local-video').srcObject = myStream;
+            document.getElementById('local-video').srcObject = _stream;
         } catch (error) {
             console.error('Error accessing media devices.', error);
         }
@@ -35,14 +35,14 @@
             ]
         };
 
-        connection = new RTCPeerConnection(connectionConfiguration);
+        _connection = new RTCPeerConnection(connectionConfiguration);
 
-        audioTracks.forEach(track => connection.addTrack(track, myStream));
-        videoTracks.forEach(track => connection.addTrack(track, myStream));
+        _audioTracks.forEach(track => _connection.addTrack(track, _stream));
+        _videoTracks.forEach(track => _connection.addTrack(track, _stream));
 
-        connection.onicecandidate = event => {
+        _connection.onicecandidate = event => {
             const logDisabled = false;
-            send(WS.ICE_CANDIDATE, { userId: anonymousUserId, candidates: event.candidate }, logDisabled);
+            send(WS.ICE_CANDIDATE, { userId: _anonymousUserId, candidates: event.candidate }, logDisabled);
         };
 
         if (shouldCreateOffer) {
@@ -54,15 +54,15 @@
         console.log('Creating an offer');
         const offer = await connection.createOffer();
         await connection.setLocalDescription(offer);
-        send(WS.OFFER_CREATED, { userId: anonymousUserId, roomId: gRoomId, offer: offer });
+        send(WS.OFFER_CREATED, { userId: _anonymousUserId, roomId: _roomId, offer: offer });
     }
 
     const answerOffer = async (offer) => {
         console.log('Answering offer');
-        await connection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await connection.createAnswer();
-        await connection.setLocalDescription(answer);
-        send(WS.OFFER_ANSWERED, { userId: anonymousUserId, roomId: gRoomId, offerAnswer: answer });
+        await _connection.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await _connection.createAnswer();
+        await _connection.setLocalDescription(answer);
+        send(WS.OFFER_ANSWERED, { userId: _anonymousUserId, roomId: _roomId, offerAnswer: answer });
     }
 
     const connectToSignalingServer = () => connect((message) => handleMessage(message));
@@ -86,27 +86,27 @@
 
         const sessionRes = await fetch('http://localhost:3000/users/anonymous-session', { method: 'POST' });
         const { userId } = await sessionRes.json();
-        anonymousUserId = userId;
+        _anonymousUserId = userId;
         console.log('Session created | User ID:', userId);
 
         document.getElementById('create-room-btn').addEventListener('click', async () => {
-            const res = await fetch(`http://localhost:3000/users/${anonymousUserId}/rooms/create`, { method: 'POST' });
+            const res = await fetch(`http://localhost:3000/users/${_anonymousUserId}/rooms/create`, { method: 'POST' });
             const { roomId } = await res.json();
-            gRoomId = roomId;
+            _roomId = roomId;
             console.log('Room created:', roomId);
             navigator.clipboard.writeText(roomId);
             await connectToSignalingServer();
-            identify(anonymousUserId, roomId);
+            identify(_anonymousUserId, roomId);
         });
 
         document.getElementById('join-btn').addEventListener('click', async () => {
             const roomId = document.getElementById('room-input').value.trim();
             if (!roomId) return;
-            gRoomId = roomId;
+            _roomId = roomId;
             console.log('Connecting to signaling server');
             await connectToSignalingServer();
-            console.log('Joining room:', gRoomId);
-            join(gRoomId, anonymousUserId);
+            console.log('Joining room:', _roomId);
+            join(_roomId, _anonymousUserId);
         });
     }
 
