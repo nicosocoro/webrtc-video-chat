@@ -102,6 +102,15 @@ wss.on('connection', (ws) => {
             peer?.ws?.send(JSON.stringify({ type: WS.OFFER_CREATED, offer }));
             return;
         }
+
+        if (type === WS.OFFER_ANSWERED) {
+            console.log(`Offer answered from user ${userId} in room ${roomId}`);
+            const peer = room?.peerOf(userId);
+            console.log(`Sending offer answered to peer ${peer?.id} in room ${roomId}`);
+            const offerAnswer = message.offerAnswer;
+            peer?.ws?.send(JSON.stringify({ type: WS.OFFER_ANSWERED, offerAnswer: offerAnswer }));
+            return;
+        }
     });
 
     ws.on('close', () => {

@@ -65,6 +65,11 @@
         send(WS.OFFER_ANSWERED, { userId: _anonymousUserId, roomId: _roomId, offerAnswer: answer });
     }
 
+    const offerAnswered = async (offerAnswer) => {
+        console.log('Offer answered');
+        await _connection.setRemoteDescription(new RTCSessionDescription(offerAnswer));
+    }
+
     const connectToSignalingServer = () => connect((message) => handleMessage(message));
 
     const handleMessage = (message) => {
@@ -75,6 +80,9 @@
                 break;
             case WS.OFFER_CREATED:
                 answerOffer(message.offer);
+                break;
+            case WS.OFFER_ANSWERED:
+                offerAnswered(message.offerAnswer);
                 break;
             default:
                 console.warn('Unknown message type:', message.type);
