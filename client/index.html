@@ -168,14 +168,16 @@
         <button id="join-btn">Join Room</button>
     </div>
 
-    <div>
-        <h2>Local Stream</h2>
-        <video id="local-video" controls autoplay></video>
-    </div>
+    <div style="display: flex; gap: 16px;">
+        <div style="flex: 1;">
+            <h2>Local Stream</h2>
+            <video id="local-video" controls autoplay muted playsinline style="width: 100%;"></video>
+        </div>
 
-    <div>
-        <h2>Remote Stream</h2>
-        <video id="remote-video" controls autoplay></video>
+        <div style="flex: 1;">
+            <h2>Remote Stream</h2>
+            <video id="remote-video" controls autoplay playsinline style="width: 100%;"></video>
+        </div>
     </div>
 </body>
 
