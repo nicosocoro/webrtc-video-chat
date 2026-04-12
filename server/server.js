@@ -44,9 +44,14 @@ wss.on('connection', (ws) => {
         let message;
         try {
             message = JSON.parse(data);
-            if (message.type !== WS.ICE_CANDIDATE && message.type !== WS.OFFER_CREATED) {
-                console.log('Received:', message);
-            }
+            // const VERBOSE_EVENTS = [
+            //     WS.ICE_CANDIDATE,
+            //     WS.OFFER_CREATED,
+            //     WS.OFFER_ANSWERED
+            // ];
+            // if (!VERBOSE_EVENTS.includes(message.type)) {
+            //     console.log('Received:', message);
+            // }
         } catch {
             console.error('Invalid JSON received');
             return;
@@ -62,7 +67,7 @@ wss.on('connection', (ws) => {
                 return;
             }
             member.ws = ws;
-            _userSockets.set(ws.id, {userId: userId, roomId: roomId});
+            _userSockets.set(ws.id, { userId: userId, roomId: roomId });
 
             return;
         }
@@ -82,7 +87,7 @@ wss.on('connection', (ws) => {
                 return;
             }
 
-            _userSockets.set(ws.id, {userId: userId, roomId: roomId});
+            _userSockets.set(ws.id, { userId: userId, roomId: roomId });
             room.add(new UserRoom(userId, Role.GUEST, ws));
 
             console.log(`Client ${userId} joined room: ${room.id} (${room.size} [${[...room.members.keys()].join(', ')}] members)`);
@@ -119,7 +124,7 @@ wss.on('connection', (ws) => {
 
         const deleted = _userSockets.delete(ws.id);
         console.log(`Client ${userId} disconnected, socket removed: ${deleted}`);
-        
+
         if (currentRoom) {
             currentRoom.remove(userId);
             if (currentRoom.size === 0) {
