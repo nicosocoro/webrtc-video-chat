@@ -45,14 +45,6 @@ wss.on('connection', (ws) => {
         let message;
         try {
             message = JSON.parse(data);
-            // const VERBOSE_EVENTS = [
-            //     WS.ICE_CANDIDATE,
-            //     WS.OFFER_CREATED,
-            //     WS.OFFER_ANSWERED
-            // ];
-            // if (!VERBOSE_EVENTS.includes(message.type)) {
-            //     console.log('Received:', message);
-            // }
         } catch {
             console.error('Invalid JSON received');
             return;
