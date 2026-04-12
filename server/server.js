@@ -9,6 +9,7 @@ const HTTP_PORT = 3000;
 const WS_PORT = 3001;
 
 const rooms = new Set();
+const _userSockets = new Map();
 const router = createRouter();
 
 router.post('/users/anonymous-session', (_req, res) => {
@@ -61,6 +62,7 @@ wss.on('connection', (ws) => {
                 return;
             }
             member.ws = ws;
+            _userSockets.set(ws.id, {userId: userId, roomId: roomId});
 
             return;
         }
@@ -80,6 +82,7 @@ wss.on('connection', (ws) => {
                 return;
             }
 
+            _userSockets.set(ws.id, {userId: userId, roomId: roomId});
             room.add(new UserRoom(userId, Role.GUEST, ws));
 
             console.log(`Client ${userId} joined room: ${room.id} (${room.size} [${[...room.members.keys()].join(', ')}] members)`);
@@ -102,14 +105,20 @@ wss.on('connection', (ws) => {
     });
 
     ws.on('close', () => {
+        const { userId, roomId } = _userSockets.get(ws.id) || {};
+        const currentRoom = [...rooms].find((r) => r.id === roomId);
+
+        const deleted = _userSockets.delete(ws.id);
+        console.log(`Client ${userId} disconnected, socket removed: ${deleted}`);
+        
         if (currentRoom) {
-            currentRoom.remove(clientId);
+            currentRoom.remove(userId);
             if (currentRoom.size === 0) {
                 rooms.delete(currentRoom);
             } else {
-                broadcast(currentRoom, ws, { type: 'peer-left', clientId });
+                broadcast(currentRoom, ws, { type: 'peer-left', userId });
             }
-            console.log(`Client ${clientId} left room: ${currentRoom.id}`);
+            console.log(`Client ${userId} left room: ${currentRoom.id}`);
         }
     });
 });
