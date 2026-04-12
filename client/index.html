@@ -52,8 +52,8 @@
 
     const createAnOffer = async () => {
         console.log('Creating an offer');
-        const offer = await connection.createOffer();
-        await connection.setLocalDescription(offer);
+        const offer = await _connection.createOffer();
+        await _connection.setLocalDescription(offer);
         send(WS.OFFER_CREATED, { userId: _anonymousUserId, roomId: _roomId, offer: offer });
     }
 
