@@ -13,7 +13,9 @@ npm install
 npm run client
 ```
 
-It will open a local server on a random port.
+Then, open two tabs on `localhost:8080`:
+- Tab1 to create room
+- Tab2 to join room
 
 ## Server
 
@@ -25,6 +27,10 @@ The `signaling server` that forwards networking information between peers to hel
 npm install # If not done yet
 npm run server
 ```
+
+It will run:
+- HTTP server on port 3000
+- WebSockets on port 3001
 
 ## WebRTC concepts
 
