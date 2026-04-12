@@ -40,11 +40,35 @@
         _audioTracks.forEach(track => _connection.addTrack(track, _stream));
         _videoTracks.forEach(track => _connection.addTrack(track, _stream));
 
+        _connection.onconnectionstatechange = event => {
+            console.log('Connection state changed:', _connection.connectionState);
+        };
+
         _connection.onicecandidate = event => {
             const logDisabled = false;
             send(WS.ICE_CANDIDATE, { userId: _anonymousUserId, roomId: _roomId, candidate: event.candidate }, logDisabled);
         };
 
+        _connection.onicecandidateerror = event => {
+            console.error('ICE candidate error:', event);
+        };
+
+        _connection.onicegatheringstatechange = event => {
+            console.log('ICE gathering state changed:', _connection.iceGatheringState);
+        };
+
+        _connection.negotiationneeded = event => {
+            console.log('Negotiation needed');
+        };
+
+        _connection.ontrack = event => {
+            console.log('Track received:', event.track.kind);
+            const remoteVideo = document.getElementById('remote-video');
+            if (remoteVideo.srcObject) {
+                remoteVideo.srcObject.addTrack(event.track);
+            } else {
+                remoteVideo.srcObject = new MediaStream([event.track]);
+            }
         };
 
         if (shouldCreateOffer) {
