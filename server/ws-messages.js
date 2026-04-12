@@ -1,12 +1,1 @@
-// USER
-export const USER_IDENTIFY = 'USER__IDENTIFY';
-
-// ROOM
-export const JOIN_ROOM = 'ROOM__JOIN';
-export const ROOM_GUEST_JOINED = 'ROOM__GUEST_JOINED';
-
-// PRE_STREAM
-export const PEERS_READY_TO_START_CONNECTION = 'PRE_STREAM__PEERS_READY_TO_START_CONNECTION';
-export const OFFER_CREATED = 'PRE_STREAM__OFFER_CREATED';
-export const OFFER_ANSWERED = 'PRE_STREAM__OFFER_ANSWERED';
-export const ICE_CANDIDATE = 'PRE_STREAM__ICE_CANDIDATE';
+export * from '../client/ws-messages.js';
