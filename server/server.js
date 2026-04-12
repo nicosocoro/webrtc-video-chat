@@ -4,6 +4,7 @@ import { Room } from './Room.js';
 import { createRouter } from './router.js';
 import { Role, UserRoom } from './UserRoom.js';
 import * as WS from './ws-messages.js';
+import { SERVER } from './config.js';
 
 const HTTP_PORT = 3000;
 const WS_PORT = 3001;
@@ -32,7 +33,7 @@ router.post('/users/(?<userId>[^/]+)/rooms/create', (req, res) => {
 const httpServer = http.createServer((req, res) => router.dispatch(req, res));
 
 httpServer.listen(HTTP_PORT, () => {
-    console.log(`HTTP server running on http://localhost:${HTTP_PORT}`);
+    console.log(`HTTP server running on ${SERVER}:${HTTP_PORT}`);
 });
 
 const wss = new WebSocketServer({ port: WS_PORT });
@@ -167,4 +168,4 @@ function broadcast(room, sender, message) {
     });
 }
 
-console.log(`WebSocket server running on ws://localhost:${WS_PORT}`);
+console.log(`WebSocket server running on ${SERVER.replace(/^http/, 'ws')}:${WS_PORT}`);

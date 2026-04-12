@@ -2,6 +2,7 @@
 <script type="module">
     import { connect, identify, join, send } from './websocket.js';
     import * as WS from './ws-messages.js';
+    import { SERVER } from './config.js';
 
     let _audioTracks = [];
     let _videoTracks = [];
@@ -123,13 +124,13 @@
     const main = async () => {
         await initializeTracks();
 
-        const sessionRes = await fetch('http://localhost:3000/users/anonymous-session', { method: 'POST' });
+        const sessionRes = await fetch(`${SERVER}:3000/users/anonymous-session`, { method: 'POST' });
         const { userId } = await sessionRes.json();
         _anonymousUserId = userId;
         console.log('Session created | User ID:', userId);
 
         document.getElementById('create-room-btn').addEventListener('click', async () => {
-            const res = await fetch(`http://localhost:3000/users/${_anonymousUserId}/rooms/create`, { method: 'POST' });
+            const res = await fetch(`${SERVER}:3000/users/${_anonymousUserId}/rooms/create`, { method: 'POST' });
             const { roomId } = await res.json();
             _roomId = roomId;
             console.log('Room created:', roomId);

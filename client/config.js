@@ -1,0 +1,1 @@
+export const SERVER = "http://localhost"; // Use LAN IP or hostname if testing on multiple devices
