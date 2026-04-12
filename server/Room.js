@@ -21,7 +21,6 @@ export class Room {
     }
 
     peerOf(userId) {
-        console.log(`Members availables are: ${[...this.members.keys()]}`);
         return [...this.members.values()].find((member) => member.id !== userId);
     }
 }

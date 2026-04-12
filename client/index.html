@@ -42,7 +42,9 @@
 
         _connection.onicecandidate = event => {
             const logDisabled = false;
-            send(WS.ICE_CANDIDATE, { userId: _anonymousUserId, candidates: event.candidate }, logDisabled);
+            send(WS.ICE_CANDIDATE, { userId: _anonymousUserId, roomId: _roomId, candidate: event.candidate }, logDisabled);
+        };
+
         };
 
         if (shouldCreateOffer) {
@@ -83,6 +85,11 @@
                 break;
             case WS.OFFER_ANSWERED:
                 offerAnswered(message.offerAnswer);
+                break;
+            case WS.ICE_CANDIDATE:
+                if (message.candidate && _connection) {
+                    _connection.addIceCandidate(new RTCIceCandidate(message.candidate));
+                }
                 break;
             default:
                 console.warn('Unknown message type:', message.type);

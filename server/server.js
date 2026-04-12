@@ -116,6 +116,12 @@ wss.on('connection', (ws) => {
             peer?.ws?.send(JSON.stringify({ type: WS.OFFER_ANSWERED, offerAnswer: offerAnswer }));
             return;
         }
+
+        if (type === WS.ICE_CANDIDATE) {
+            const peer = room?.peerOf(userId);
+            peer?.ws?.send(JSON.stringify({ type: WS.ICE_CANDIDATE, candidate: message.candidate }));
+            return;
+        }
     });
 
     ws.on('close', () => {
