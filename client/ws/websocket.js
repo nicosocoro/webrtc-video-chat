@@ -1,5 +1,5 @@
 import * as WS from './ws-messages.js';
-import { SERVER } from './config.js';
+import { SERVER } from '../config.js';
 
 const SIGNALING_SERVER = SERVER.replace(/^http/, 'ws') + ':3001';
 

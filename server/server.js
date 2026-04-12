@@ -3,7 +3,7 @@ import { WebSocketServer } from 'ws';
 import { Room } from './Room.js';
 import { createRouter } from './router.js';
 import { Role, UserRoom } from './UserRoom.js';
-import * as WS from './ws-messages.js';
+import * as WS from './ws/ws-messages.js';
 import { SERVER } from './config.js';
 
 const HTTP_PORT = 3000;
