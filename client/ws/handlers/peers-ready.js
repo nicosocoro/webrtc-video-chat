@@ -14,6 +14,9 @@ export const handlePeersReady = async ({ message, state }) => {
 
     state.connection.onconnectionstatechange = () => {
         console.log('Connection state changed:', state.connection.connectionState);
+        if (state.connection.connectionState === 'connected') {
+            document.getElementById('leave-btn').style.display = 'inline-block';
+        }
     };
 
     state.connection.onicecandidate = event => {

@@ -1,6 +1,6 @@
 <html>
 <script type="module">
-    import { connect, identify, join } from './ws/websocket.js';
+    import { connect, identify, join, disconnect } from './ws/websocket.js';
     import * as WS from './ws/ws-messages.js';
     import { SERVER } from './config.js';
     import { handlePeersReady } from './ws/handlers/peers-ready.js';
@@ -29,6 +29,14 @@
         }
     }
 
+    const resetRemote = (state) => {
+        state.connection?.close();
+        state.connection = null;
+        document.getElementById('remote-video').srcObject = null;
+        document.getElementById('streams').classList.remove('peer-connected');
+        document.getElementById('leave-btn').style.display = 'none';
+    };
+
     const connectToSignalingServer = () => connect((message) => {
         console.log('Received message:', message);
         const ctx = { message, state };
@@ -37,6 +45,7 @@
             case WS.OFFER_CREATED:                   return handleOfferCreated(ctx);
             case WS.OFFER_ANSWERED:                  return handleOfferAnswered(ctx);
             case WS.ICE_CANDIDATE:                   return handleIceCandidate(ctx);
+            case WS.PEER_LEFT:                       return resetRemote(state);
             default: console.warn('Unknown message type:', message.type);
         }
     });
@@ -67,6 +76,12 @@
             await connectToSignalingServer();
             console.log('Joining room:', roomId);
             join(roomId, state.userId);
+        });
+
+        document.getElementById('leave-btn').addEventListener('click', () => {
+            resetRemote(state);
+            disconnect();
+            state.roomId = null;
         });
     }
 
@@ -115,6 +130,9 @@
         }
 
         button:hover { background: #252525; border-color: #555; }
+
+        #leave-btn { display: none; border-color: #5a1e1e; color: #e57373; }
+        #leave-btn:hover { background: #2a1010; border-color: #e57373; }
 
         .divider {
             width: 1px;
@@ -180,6 +198,7 @@
         <div class="divider"></div>
         <input id="room-input" type="text" placeholder="Room ID" />
         <button id="join-btn">Join</button>
+        <button id="leave-btn">Leave</button>
     </div>
 
     <div class="streams" id="streams">

@@ -52,6 +52,7 @@ export const startWsServer = (rooms, _userSockets) => {
                 if (currentRoom.size === 0) {
                     rooms.delete(currentRoom);
                 } else {
+                    // TODO: Convert GUEST to ADMIN?
                     broadcast(currentRoom, ws, { type: WS.PEER_LEFT, userId });
                 }
                 console.log(`Client ${userId} left room: ${currentRoom.id}`);

@@ -23,6 +23,11 @@ export const connect = (onMessage) => new Promise((resolve) => {
     socket.onerror = (err) => console.error('WebSocket error:', err);
 });
 
+export const disconnect = () => {
+    socket?.close();
+    socket = null;
+};
+
 export const identify = (userId, roomId = null) => {
     socket.send(JSON.stringify({ type: WS.USER_IDENTIFY, userId, roomId }));
 };
