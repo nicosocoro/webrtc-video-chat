@@ -8,10 +8,8 @@ import { handleOfferCreated } from './handlers/offer-created.js';
 import { handleOfferAnswered } from './handlers/offer-answered.js';
 import { handleIceCandidate } from './handlers/ice-candidate.js';
 
-const WS_PORT = 3001;
-
-export const startWsServer = (rooms, _userSockets) => {
-    const wss = new WebSocketServer({ port: WS_PORT });
+export const startWsServer = (rooms, _userSockets, httpsServer) => {
+    const wss = new WebSocketServer({ server: httpsServer });
 
     wss.on('connection', (ws) => {
         console.log('Client connected');
@@ -60,5 +58,5 @@ export const startWsServer = (rooms, _userSockets) => {
         });
     });
 
-    console.log(`WebSocket server running on ${SERVER.replace(/^http/, 'ws')}:${WS_PORT}`);
+    console.log(`WebSocket server running on ${SERVER.replace(/^http/, 'ws')}:3000`);
 };

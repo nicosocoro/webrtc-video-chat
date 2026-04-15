@@ -18,25 +18,6 @@ Peer A ──┐                    ┌── Peer B
 3. The signaling server helps them exchange connection info (SDP + ICE candidates)
 4. Once connected, media flows directly between browsers — the server is out of the picture
 
-## Running locally
-
-You need two terminals.
-
-**Server**
-```sh
-npm install
-npm run server
-```
-Runs an HTTP server on `:3000` and a WebSocket signaling server on `:3001`.
-
-**Client**
-```sh
-npm run client
-```
-Serves the client at `localhost:8080`. Open two tabs:
-- Tab 1 → click **Create room** (Room ID automatically copied to clipboard)
-- Tab 2 → paste Room ID, click **Join**
-
 ## Project Structure
 
 ```
@@ -56,6 +37,79 @@ server/          # Node.js backend
   Room.js
   server.js
 ```
+
+## Running locally
+
+You need two terminals.
+
+**Server**
+```sh
+npm install
+npm run server
+```
+Runs an HTTP server on `:3000` and a WebSocket signaling server on `:3001`.
+
+**Client**
+```sh
+npm run client
+```
+Serves the client at `localhost:8080`. Open two tabs:
+- Tab 1 → click **Create room** (Room ID automatically copied to clipboard)
+- Tab 2 → paste Room ID, click **Join**
+
+## Running in LAN (different devices)
+
+Browsers only allow camera/mic access (`getUserMedia`) on secure contexts. `localhost` is exempt, but a LAN IP (e.g. `192.168.1.x`) is not — so HTTPS is required.
+
+### 1. Find your LAN IP
+
+```sh
+ipconfig getifaddr en0
+```
+
+### 2. Generate a self-signed certificate
+
+```sh
+mkdir certs
+openssl req -x509 -newkey rsa:2048 -nodes \
+  -keyout certs/key.pem \
+  -out certs/cert.pem \
+  -days 365 \
+  -subj "/CN=192.168.1.x" \
+  -addext "subjectAltName=IP:192.168.1.x,IP:127.0.0.1,DNS:localhost"
+```
+
+Replace `192.168.1.x` with your actual LAN IP. The `certs/` folder is gitignored.
+
+### 3. Update config
+
+In `client/config.js`, set your LAN IP:
+
+```js
+export const SERVER = "https://192.168.1.x";
+```
+
+### 4. Run server and client
+
+```sh
+npm run server
+npm run client-secure
+```
+
+The server runs on `:3000` (HTTPS + WSS). The client is served at `:8080` (HTTPS).
+
+### 5. Accept the certificate in the browser
+
+Because the certificate is self-signed, the browser will warn on first visit. You need to accept it **for each port** before the app will work:
+
+1. Go to `https://192.168.1.x:3000` → click through the warning (Advanced → Proceed)
+2. Go to `https://192.168.1.x:8080` → click through the warning
+
+You'll see a 404 on `:3000` — that's fine, it just means the cert is now trusted for that session. After this, the app works normally.
+
+> **Why step 1 matters:** fetch() and WebSocket connections to an untrusted certificate are blocked silently by the browser and surface as CORS or network errors. Accepting the cert via direct navigation fixes this.
+
+----
 
 ## WebRTC concepts
 
