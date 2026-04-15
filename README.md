@@ -47,7 +47,7 @@ You need two terminals.
 npm install
 npm run server
 ```
-Runs an HTTP server on `:3000` and a WebSocket signaling server on `:3001`.
+Runs an HTTP server and WebSocket signaling server on `:3000`.
 
 **Client**
 ```sh
@@ -92,11 +92,13 @@ export const SERVER = "https://192.168.1.x";
 ### 4. Run server and client
 
 ```sh
-npm run server
+npm run server-secure
 npm run client-secure
 ```
 
 The server runs on `:3000` (HTTPS + WSS). The client is served at `:8080` (HTTPS).
+
+> `npm run server` runs plain HTTP + WS (no cert needed, localhost only). `npm run server-secure` passes `--secure` to load the TLS certificate.
 
 ### 5. Accept the certificate in the browser
 

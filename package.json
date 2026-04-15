@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "server": "node server/server.js",
+    "server-secure": "node server/server.js --secure",
     "client": "serve ./client -l 8080",
     "client-secure": "serve ./client -l 8080 --ssl-cert certs/cert.pem --ssl-key certs/key.pem"
   },

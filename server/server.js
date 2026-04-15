@@ -1,3 +1,4 @@
+import http from 'http';
 import https from 'https';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -8,13 +9,8 @@ import { UserRoom, Role } from './UserRoom.js';
 import { SERVER } from './config.js';
 import { startWsServer } from './ws/ws-server.js';
 
-const HTTP_PORT = 3000;
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const tlsOptions = {
-    key:  readFileSync(join(__dirname, '../certs/key.pem')),
-    cert: readFileSync(join(__dirname, '../certs/cert.pem')),
-};
+const PORT = 3000;
+const isSecure = process.argv.includes('--secure');
 
 const rooms = new Set();
 const _userSockets = new Map();
@@ -37,10 +33,21 @@ router.post('/users/(?<userId>[^/]+)/rooms/create', (req, res) => {
     res.end(JSON.stringify({ roomId: room.id }));
 });
 
-const httpsServer = https.createServer(tlsOptions, (req, res) => router.dispatch(req, res));
+const handler = (req, res) => router.dispatch(req, res);
 
-httpsServer.listen(HTTP_PORT, () => {
-    console.log(`HTTPS server running on ${SERVER}:${HTTP_PORT}`);
+const server = isSecure
+    ? (() => {
+        const __dirname = dirname(fileURLToPath(import.meta.url));
+        const tlsOptions = {
+            key:  readFileSync(join(__dirname, '../certs/key.pem')),
+            cert: readFileSync(join(__dirname, '../certs/cert.pem')),
+        };
+        return https.createServer(tlsOptions, handler);
+    })()
+    : http.createServer(handler);
+
+server.listen(PORT, () => {
+    console.log(`${isSecure ? 'HTTPS' : 'HTTP'} server running on ${SERVER}:${PORT}`);
 });
 
-startWsServer(rooms, _userSockets, httpsServer);
+startWsServer(rooms, _userSockets, server);
