@@ -1,36 +1,61 @@
 # Simple Video Chat
 
-This is a simple video chat to learn WebRTC.
+A hobby project to learn WebRTC. Two peers connect directly via browser — no media server involved, just a tiny signaling server to help them find each other.
+
+## How it works
+
+```
+Peer A ──┐                    ┌── Peer B
+         └── signaling server ──┘
+              (just for setup)
+
+         then: Peer A ◄──────────► Peer B
+                      direct P2P
+```
+
+1. Peer A creates a room and shares the room ID
+2. Peer B joins with that ID
+3. The signaling server helps them exchange connection info (SDP + ICE candidates)
+4. Once connected, media flows directly between browsers — the server is out of the picture
+
+## Running locally
+
+You need two terminals.
+
+**Server**
+```sh
+npm install
+npm run server
+```
+Runs an HTTP server on `:3000` and a WebSocket signaling server on `:3001`.
+
+**Client**
+```sh
+npm run client
+```
+Serves the client at `localhost:8080`. Open two tabs:
+- Tab 1 → click **Create room** (Room ID automatically copied to clipboard)
+- Tab 2 → paste Room ID, click **Join**
 
 ## Project Structure
 
-## Client
-
-Vanilla Javascript web site used by peers (caller and callee) to communicate with its respective peer.
-
-```sh
-npm install
-npm run client
 ```
+client/          # vanilla JS frontend
+  ws/
+    handlers/    # one file per incoming WS message type
+    websocket.js # WS connection + send helpers
+    ws-messages.js
+  config.js
+  index.html
 
-Then, open two tabs on `localhost:8080`:
-- Tab1 to create room
-- Tab2 to join room
-
-## Server
-
-Node server which supports WebSocket for two-way real-time communication.
-
-The `signaling server` that forwards networking information between peers to help them stablish the WebRTC connection.
-
-```sh
-npm install # If not done yet
-npm run server
+server/          # Node.js backend
+  ws/
+    handlers/    # one file per incoming WS message type
+    ws-server.js # WebSocket server setup
+  router.js      # HTTP routes
+  Room.js
+  server.js
 ```
-
-It will run:
-- HTTP server on port 3000
-- WebSockets on port 3001
 
 ## WebRTC concepts
 
