@@ -1,152 +1,72 @@
 <html>
 <script type="module">
-    import { connect, identify, join, send } from './ws/websocket.js';
+    import { connect, identify, join } from './ws/websocket.js';
     import * as WS from './ws/ws-messages.js';
     import { SERVER } from './config.js';
+    import { handlePeersReady } from './ws/handlers/peers-ready.js';
+    import { handleOfferCreated } from './ws/handlers/offer-created.js';
+    import { handleOfferAnswered } from './ws/handlers/offer-answered.js';
+    import { handleIceCandidate } from './ws/handlers/ice-candidate.js';
 
-    let _audioTracks = [];
-    let _videoTracks = [];
-    let _stream;
-    let _connection;
-    let _anonymousUserId;
-    let _roomId;
+    const state = {
+        connection: null,
+        stream: null,
+        audioTracks: [],
+        videoTracks: [],
+        userId: null,
+        roomId: null,
+    };
 
     const initializeTracks = async () => {
         try {
-            _stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            _audioTracks = _stream.getAudioTracks();
-            _videoTracks = _stream.getVideoTracks();
+            state.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            state.audioTracks = state.stream.getAudioTracks();
+            state.videoTracks = state.stream.getVideoTracks();
 
-            document.getElementById('local-video').srcObject = _stream;
+            document.getElementById('local-video').srcObject = state.stream;
         } catch (error) {
             console.error('Error accessing media devices.', error);
         }
     }
 
-    const createWebRTCConnection = async (shouldCreateOffer) => {
-        console.log('Creating RTCPeerConnection');
-        const connectionConfiguration = {
-            iceServers: [
-                {
-                    urls: [
-                        'stun:stun.l.google.com:19302',
-                        'stun:stun1.l.google.com:19302'
-                    ]
-                }
-            ]
-        };
-
-        _connection = new RTCPeerConnection(connectionConfiguration);
-
-        _audioTracks.forEach(track => _connection.addTrack(track, _stream));
-        _videoTracks.forEach(track => _connection.addTrack(track, _stream));
-
-        _connection.onconnectionstatechange = event => {
-            console.log('Connection state changed:', _connection.connectionState);
-        };
-
-        _connection.onicecandidate = event => {
-            const logDisabled = false;
-            send(WS.ICE_CANDIDATE, { userId: _anonymousUserId, roomId: _roomId, candidate: event.candidate }, logDisabled);
-        };
-
-        _connection.onicecandidateerror = event => {
-            console.error('ICE candidate error:', event);
-        };
-
-        _connection.onicegatheringstatechange = event => {
-            console.log('ICE gathering state changed:', _connection.iceGatheringState);
-        };
-
-        _connection.negotiationneeded = event => {
-            console.log('Negotiation needed');
-        };
-
-        _connection.ontrack = event => {
-            console.log('Track received:', event.track.kind);
-            const remoteVideo = document.getElementById('remote-video');
-            if (remoteVideo.srcObject) {
-                remoteVideo.srcObject.addTrack(event.track);
-            } else {
-                remoteVideo.srcObject = new MediaStream([event.track]);
-            }
-        };
-
-        if (shouldCreateOffer) {
-            createAnOffer();
-        }
-    }
-
-    const createAnOffer = async () => {
-        console.log('Creating an offer');
-        const offer = await _connection.createOffer();
-        await _connection.setLocalDescription(offer);
-        send(WS.OFFER_CREATED, { userId: _anonymousUserId, roomId: _roomId, offer: offer });
-    }
-
-    const answerOffer = async (offer) => {
-        console.log('Answering offer');
-        await _connection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await _connection.createAnswer();
-        await _connection.setLocalDescription(answer);
-        send(WS.OFFER_ANSWERED, { userId: _anonymousUserId, roomId: _roomId, offerAnswer: answer });
-    }
-
-    const offerAnswered = async (offerAnswer) => {
-        console.log('Offer answered');
-        await _connection.setRemoteDescription(new RTCSessionDescription(offerAnswer));
-    }
-
-    const connectToSignalingServer = () => connect((message) => handleMessage(message));
-
-    const handleMessage = (message) => {
+    const connectToSignalingServer = () => connect((message) => {
         console.log('Received message:', message);
+        const ctx = { message, state };
         switch (message.type) {
-            case WS.PEERS_READY_TO_START_CONNECTION:
-                createWebRTCConnection(message.shouldCreateOffer);
-                break;
-            case WS.OFFER_CREATED:
-                answerOffer(message.offer);
-                break;
-            case WS.OFFER_ANSWERED:
-                offerAnswered(message.offerAnswer);
-                break;
-            case WS.ICE_CANDIDATE:
-                if (message.candidate && _connection) {
-                    _connection.addIceCandidate(new RTCIceCandidate(message.candidate));
-                }
-                break;
-            default:
-                console.warn('Unknown message type:', message.type);
+            case WS.PEERS_READY_TO_START_CONNECTION: return handlePeersReady(ctx);
+            case WS.OFFER_CREATED:                   return handleOfferCreated(ctx);
+            case WS.OFFER_ANSWERED:                  return handleOfferAnswered(ctx);
+            case WS.ICE_CANDIDATE:                   return handleIceCandidate(ctx);
+            default: console.warn('Unknown message type:', message.type);
         }
-    }
+    });
 
     const main = async () => {
         await initializeTracks();
 
         const sessionRes = await fetch(`${SERVER}:3000/users/anonymous-session`, { method: 'POST' });
         const { userId } = await sessionRes.json();
-        _anonymousUserId = userId;
+        state.userId = userId;
         console.log('Session created | User ID:', userId);
 
         document.getElementById('create-room-btn').addEventListener('click', async () => {
-            const res = await fetch(`${SERVER}:3000/users/${_anonymousUserId}/rooms/create`, { method: 'POST' });
+            const res = await fetch(`${SERVER}:3000/users/${state.userId}/rooms/create`, { method: 'POST' });
             const { roomId } = await res.json();
-            _roomId = roomId;
+            state.roomId = roomId;
             console.log('Room created:', roomId);
             navigator.clipboard.writeText(roomId);
             await connectToSignalingServer();
-            identify(_anonymousUserId, roomId);
+            identify(state.userId, roomId);
         });
 
         document.getElementById('join-btn').addEventListener('click', async () => {
             const roomId = document.getElementById('room-input').value.trim();
             if (!roomId) return;
-            _roomId = roomId;
+            state.roomId = roomId;
             console.log('Connecting to signaling server');
             await connectToSignalingServer();
-            console.log('Joining room:', _roomId);
-            join(_roomId, _anonymousUserId);
+            console.log('Joining room:', roomId);
+            join(roomId, state.userId);
         });
     }
 
