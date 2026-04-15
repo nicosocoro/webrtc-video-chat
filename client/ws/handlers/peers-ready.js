@@ -35,6 +35,7 @@ export const handlePeersReady = async ({ message, state }) => {
             remoteVideo.srcObject.addTrack(event.track);
         } else {
             remoteVideo.srcObject = new MediaStream([event.track]);
+            document.getElementById('streams').classList.add('peer-connected');
         }
     };
 

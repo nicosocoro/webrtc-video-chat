@@ -74,29 +74,123 @@
 </script>
 
 <head>
-    <title>User Media - Tracks</title>
+    <title>WebRTC</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: #0f0f0f;
+            color: #e8e8e8;
+            min-height: 100vh;
+            padding: 32px 24px;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 18px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #1a1a1a;
+            color: #e8e8e8;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        button:hover { background: #252525; border-color: #555; }
+
+        .divider {
+            width: 1px;
+            height: 28px;
+            background: #333;
+        }
+
+        input {
+            padding: 8px 12px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #1a1a1a;
+            color: #e8e8e8;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        input:focus { border-color: #555; }
+        input::placeholder { color: #555; }
+
+        .streams {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .stream-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: flex 0.3s ease;
+        }
+
+        #local-stream-box { flex: 4; }
+        #remote-stream-box { flex: 0; overflow: hidden; display: none; }
+
+        .streams.peer-connected #local-stream-box { flex: 1; }
+        .streams.peer-connected #remote-stream-box { flex: 1; display: flex; }
+
+        .stream-box h2 {
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #555;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 8px;
+            background: #111;
+            display: block;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Streams</h1>
+    <h1>WebRTC</h1>
 
-    <div>
-        <button id="create-room-btn">Create Room</button>
-
-        <br />
+    <div class="controls">
+        <button id="create-room-btn">Create room</button>
+        <div class="divider"></div>
         <input id="room-input" type="text" placeholder="Room ID" />
-        <button id="join-btn">Join Room</button>
+        <button id="join-btn">Join</button>
     </div>
 
-    <div style="display: flex; gap: 16px;">
-        <div style="flex: 1;">
-            <h2>Local Stream</h2>
-            <video id="local-video" controls autoplay muted playsinline style="width: 100%;"></video>
+    <div class="streams" id="streams">
+        <div class="stream-box" id="local-stream-box">
+            <h2>You</h2>
+            <video id="local-video" autoplay muted playsinline></video>
         </div>
 
-        <div style="flex: 1;">
-            <h2>Remote Stream</h2>
-            <video id="remote-video" controls autoplay playsinline style="width: 100%;"></video>
+        <div class="stream-box" id="remote-stream-box">
+            <h2>Remote</h2>
+            <video id="remote-video" autoplay playsinline></video>
         </div>
     </div>
 </body>
