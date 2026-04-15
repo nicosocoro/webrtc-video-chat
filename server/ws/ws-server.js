@@ -52,7 +52,7 @@ export const startWsServer = (rooms, _userSockets) => {
                 if (currentRoom.size === 0) {
                     rooms.delete(currentRoom);
                 } else {
-                    broadcast(currentRoom, ws, { type: 'peer-left', userId });
+                    broadcast(currentRoom, ws, { type: WS.PEER_LEFT, userId });
                 }
                 console.log(`Client ${userId} left room: ${currentRoom.id}`);
             }
