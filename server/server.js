@@ -48,6 +48,9 @@ const server = isSecure
 
 server.listen(PORT, () => {
     console.log(`${isSecure ? 'HTTPS' : 'HTTP'} server running on ${SERVER}:${PORT}`);
+    if (isSecure && SERVER.includes('localhost')) {
+        console.warn('\x1b[33mWarning: client/config.js still points to localhost — update SERVER to your LAN IP for multi-device testing\x1b[0m');
+    }
 });
 
 startWsServer(rooms, _userSockets, server);
