@@ -16,6 +16,7 @@ export const handlePeersReady = async ({ message, state }) => {
         console.log('Connection state changed:', state.connection.connectionState);
         if (state.connection.connectionState === 'connected') {
             document.getElementById('leave-btn').style.display = 'inline-block';
+            document.getElementById('screen-share-btn').style.display = 'inline-block';
         }
     };
 

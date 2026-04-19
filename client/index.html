@@ -15,6 +15,8 @@
         videoTracks: [],
         userId: null,
         roomId: null,
+        screenStream: null,
+        isScreenSharing: false,
     };
 
     const initializeTracks = async () => {
@@ -30,11 +32,44 @@
     }
 
     const resetRemote = (state) => {
+        if (state.isScreenSharing) {
+            state.screenStream?.getTracks().forEach(t => t.stop());
+            state.screenStream = null;
+            state.isScreenSharing = false;
+            document.getElementById('local-video').srcObject = state.stream;
+            document.getElementById('screen-share-btn').textContent = 'Share screen';
+        }
+        document.getElementById('screen-share-btn').style.display = 'none';
         state.connection?.close();
         state.connection = null;
         document.getElementById('remote-video').srcObject = null;
         document.getElementById('streams').classList.remove('peer-connected');
         document.getElementById('leave-btn').style.display = 'none';
+    };
+
+    const startScreenShare = async () => {
+        try {
+            state.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            const screenTrack = state.screenStream.getVideoTracks()[0];
+            const sender = state.connection?.getSenders().find(s => s.track?.kind === 'video');
+            if (sender) await sender.replaceTrack(screenTrack);
+            document.getElementById('local-video').srcObject = state.screenStream;
+            state.isScreenSharing = true;
+            document.getElementById('screen-share-btn').textContent = 'Stop sharing';
+            screenTrack.onended = stopScreenShare;
+        } catch (err) {
+            console.error('Screen share error:', err);
+        }
+    };
+
+    const stopScreenShare = async () => {
+        state.screenStream?.getTracks().forEach(t => t.stop());
+        state.screenStream = null;
+        state.isScreenSharing = false;
+        const sender = state.connection?.getSenders().find(s => s.track?.kind === 'video');
+        if (sender && state.videoTracks[0]) await sender.replaceTrack(state.videoTracks[0]);
+        document.getElementById('local-video').srcObject = state.stream;
+        document.getElementById('screen-share-btn').textContent = 'Share screen';
     };
 
     const connectToSignalingServer = () => connect((message) => {
@@ -82,6 +117,10 @@
             resetRemote(state);
             disconnect();
             state.roomId = null;
+        });
+
+        document.getElementById('screen-share-btn').addEventListener('click', () => {
+            state.isScreenSharing ? stopScreenShare() : startScreenShare();
         });
     }
 
@@ -133,6 +172,9 @@
 
         #leave-btn { display: none; border-color: #5a1e1e; color: #e57373; }
         #leave-btn:hover { background: #2a1010; border-color: #e57373; }
+
+        #screen-share-btn { display: none; border-color: #1e3a5a; color: #64b5f6; }
+        #screen-share-btn:hover { background: #0d1e2e; border-color: #64b5f6; }
 
         .divider {
             width: 1px;
@@ -199,6 +241,7 @@
         <input id="room-input" type="text" placeholder="Room ID" />
         <button id="join-btn">Join</button>
         <button id="leave-btn">Leave</button>
+        <button id="screen-share-btn">Share screen</button>
     </div>
 
     <div class="streams" id="streams">
